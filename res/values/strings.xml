@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="hello">Hello World, MainActivity!</string>
-    <string name="app_name">Flugtag</string>
+	<string name="app_name">Flugtag</string>
+	<string name="hello">Lets get ready to scan!</string>
+	<string name="scan">Scan!</string>
+	<string name="snap">Snap!</string>
 </resources>
