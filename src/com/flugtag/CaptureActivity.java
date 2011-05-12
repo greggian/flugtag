@@ -2,22 +2,22 @@ package com.flugtag;
 
 import java.io.IOException;
 
-import com.itwizard.mezzofanti.OCR;
-
 import android.app.Activity;
-import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.app.AlertDialog;
+import android.content.Context;
 import android.hardware.Camera;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 
+import com.flugtag.task.AsyncTaskCompleteListener;
+import com.flugtag.task.OCRTask;
+
 public class CaptureActivity extends Activity implements SurfaceHolder.Callback, Camera.PictureCallback{
 	private final String TAG = "CaptureActivity";
+	
 	private Camera camera;
 
     /**
@@ -115,24 +115,32 @@ public class CaptureActivity extends Activity implements SurfaceHolder.Callback,
 	 */
 	@Override
 	public void onPictureTaken(byte[] data, Camera camera) {
-		Log.d(TAG, "onPictureTaken");
+		Log.i(TAG, "onPictureTaken");
 		
-		Bitmap bmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-		int width = bmap.getWidth();
-		int height = bmap.getHeight();
-		
-		int pixels[] = new int[height * width];
-		bmap.getPixels(pixels, 0, width, 0, 0, width, height);
-		
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-		OCR.mConfig.GetSettings(prefs);
-		
-		OCR.Initialize();
-		OCR.ReadAvailableLanguages();
-		String[] langs = OCR.getLanguagesNative();
-		OCR ocr = OCR.get();
-		ocr.SetLanguage(OCR.mConfig.GetLanguage());
-		String text = ocr.ImgOCRAndFilter(pixels, width, height, false, false);
-		Log.d(TAG, "onPictureTaken: OCR Text: " + text);
+		//perform the OCR and call back on complete 
+		new OCRTask(this, new TaskCompleteListener()).execute(data);
 	}
+	
+	
+	public class TaskCompleteListener implements AsyncTaskCompleteListener<String> {
+
+		/**
+		 * 
+		 * 
+		 * @see com.flugtag.task.AsyncTaskCompleteListener#onTaskComplete(java.lang.Object)
+		 */
+		@Override
+		public void onTaskComplete(String result) {
+			//TODO: launch an actual activity
+			Context ctx = CaptureActivity.this;
+			AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+			builder
+				.setTitle("OCR Text")
+				.setMessage(result)
+				.setPositiveButton("Ok", null)
+				.show();
+		}
+
+	}
+	
 }
