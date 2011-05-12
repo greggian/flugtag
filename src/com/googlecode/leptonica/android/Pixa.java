@@ -341,7 +341,6 @@ public class Pixa {
 
         int x;
         int y;
-        int[] dimensions = new int[4];
         Rect bound;
 
         for (int i = 0; i < pixaCount; i++) {

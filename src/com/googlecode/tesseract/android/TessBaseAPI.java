@@ -35,7 +35,7 @@ public class TessBaseAPI {
     /**
      * Used by the native implementation of the class.
      */
-    @SuppressWarnings("unused")
+
     private int mNativeData;
 
     static {

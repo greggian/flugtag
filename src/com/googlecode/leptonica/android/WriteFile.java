@@ -185,7 +185,6 @@ public class WriteFile {
         int[] dimensions = pixs.getDimensions();
         int width = dimensions[Pix.INDEX_W];
         int height = dimensions[Pix.INDEX_H];
-        int depth = dimensions[Pix.INDEX_D];
 
         Bitmap.Config config = Bitmap.Config.ARGB_8888;
         Bitmap bitmap = Bitmap.createBitmap(width, height, config);
