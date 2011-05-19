@@ -4,4 +4,5 @@
 	<string name="hello">Lets get ready to scan!</string>
 	<string name="scan">Scan!</string>
 	<string name="snap">Snap!</string>
+	<string name="list">List</string>
 </resources>

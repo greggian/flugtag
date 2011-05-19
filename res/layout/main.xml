@@ -2,8 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:onClick="onScanClicked">
+    android:layout_height="fill_parent" android:onClick="onListClicked">
     
 	<TextView  
 	    android:layout_width="fill_parent" 
@@ -11,9 +10,15 @@
 	    android:text="@string/hello"
 	    />
 	<Button
-		android:layout_width="wrap_content"
+		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
 		android:text="@string/scan"
 		android:id="@+id/scanButton"
 		android:onClick="onScanBtnClick"/>
+	<Button
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:text="@string/list"
+		android:id="@+id/listButton"
+		android:onClick="onListBtnClick"/>
 </LinearLayout>
