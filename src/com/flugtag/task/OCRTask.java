@@ -1,15 +1,20 @@
 package com.flugtag.task;
 
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.text.MessageFormat;
 
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
 import com.flugtag.util.Paths;
+import com.googlecode.leptonica.android.Pix;
+import com.googlecode.leptonica.android.ReadFile;
 import com.googlecode.tesseract.android.TessBaseAPI;
 
 /**
@@ -24,7 +29,7 @@ import com.googlecode.tesseract.android.TessBaseAPI;
  * around but will take some time.
  * 
  */
-public class OCRTask extends AsyncTask<byte[], Void, String> {
+public class OCRTask extends AsyncTask<Uri, Void, String> {
 	private final String TAG = "OCRTask";
 	
 	private Context context;
@@ -76,27 +81,20 @@ public class OCRTask extends AsyncTask<byte[], Void, String> {
 	 * @see android.os.AsyncTask#doInBackground(Params[])
 	 */
 	@Override
-	protected String doInBackground(byte[]... params) {
-		Log.i(TAG, "OCR; starting");
+	protected String doInBackground(Uri... params) {
+		Log.i(TAG, "OCR: starting");
 		
-		byte[] data = params[0];
+		Uri data = params[0];
 		
 		long startMillis = System.currentTimeMillis();
-		
-		BitmapFactory.Options opts = new BitmapFactory.Options();
-		opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
-		
-		// Use our camera provided data
-		Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length, opts);
-		
-		// Use our sample receipt
-		//InputStream inStream = context.getResources().openRawResource(R.raw.tjreceipt);
-		//Bitmap bmp = BitmapFactory.decodeStream(inStream, null, opts);
+
+		// Use our camera provided data		
+		Pix pix = getPixFromUri(data);
 		
 		TessBaseAPI tessApi = new TessBaseAPI();
 		tessApi.init(Paths.OCR_DATA, "eng");
 		tessApi.setPageSegMode(TessBaseAPI.PSM_SINGLE_BLOCK);
-		tessApi.setImage(bmp);
+		tessApi.setImage(pix);
 		String result = tessApi.getUTF8Text();
 		int confidence = tessApi.meanConfidence();
 		tessApi.end();
@@ -111,5 +109,30 @@ public class OCRTask extends AsyncTask<byte[], Void, String> {
 						deltaMillis));
 		
 		return result;
+	}
+	
+	/**
+	 * Get a Pix instance from our source data Uri
+	 * 
+	 * @param bmpUri The Uri of our BMP file
+	 * @return The resulting Pix or null
+	 */
+	private Pix getPixFromUri(Uri bmpUri){
+		BitmapFactory.Options opts = new BitmapFactory.Options();
+		opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
+		
+		InputStream is;
+		try {
+			is = context.getContentResolver().openInputStream(bmpUri);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return null;
+		}
+		
+		Bitmap bmp = BitmapFactory.decodeStream(is, null, opts);
+		Pix pix = ReadFile.readBitmap(bmp);
+		bmp.recycle();
+		
+		return pix; 
 	}
 }

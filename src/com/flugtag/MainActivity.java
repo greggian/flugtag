@@ -1,18 +1,33 @@
 package com.flugtag;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import com.flugtag.model.CheckItem;
+import com.flugtag.task.AsyncTaskCompleteListener;
 import com.flugtag.task.LanguageInstallTask;
+import com.flugtag.task.OCRTask;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.view.View;
 
 public class MainActivity extends Activity {
 	
-    /**
+    private static final int IMAGE_CAPTURE = 0;
+	private Uri tmpFileUri;
+
+	/**
      * Handle the Activity create. 
      * 
      * @see android.app.Activity#onCreate(android.os.Bundle)
@@ -36,9 +51,31 @@ public class MainActivity extends Activity {
 	 * @category Button Event
 	 */
     public void onScanBtnClick(View btn){
-    	Intent intent = new Intent(btn.getContext(), CaptureActivity.class);
-		startActivity(intent);
+        //check that there is an activity for the image capture intent
+        if(!isIntentAvailable(this, MediaStore.ACTION_IMAGE_CAPTURE)){
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder
+				.setTitle("No image capture activity!")
+				.setMessage("There is no application available to take a picture.")
+				.setPositiveButton("Ok", null)
+				.show();
+			
+			finish();
+			return;
+        }
+        
+		try {
+	        Intent captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+			File tmpFile = File.createTempFile("flugtag", "", Environment.getExternalStorageDirectory());
+			tmpFileUri = Uri.fromFile(tmpFile);
+	        captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, tmpFileUri);
+	        
+	        startActivityForResult(captureIntent, IMAGE_CAPTURE);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
     }
+    
     
 	/**
 	 * Handle button click event
@@ -62,4 +99,87 @@ public class MainActivity extends Activity {
     	
 		startActivity(intent);
     }
+    
+	/* (non-Javadoc)
+	 * @see android.app.Activity#onActivityResult(int, int, android.content.Intent)
+	 */
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		
+		if(resultCode == Activity.RESULT_OK && requestCode == IMAGE_CAPTURE){
+			
+			//perform the OCR and call back on complete 
+			new OCRTask(this, new OCRTaskCompleteListener()).execute(tmpFileUri);
+		}
+	}
+    
+    /**
+     * Indicates whether the specified action can be used as an intent. This
+     * method queries the package manager for installed packages that can
+     * respond to an intent with the specified action. If no suitable package is
+     * found, this method returns false.
+     *
+     * @param context The application's environment.
+     * @param action The Intent action to check for availability.
+     *
+     * @return True if an Intent with the specified action can be sent and
+     *         responded to, false otherwise.
+     */
+    public static boolean isIntentAvailable(Context context, String action, Uri uri) {
+        final PackageManager packageManager = context.getPackageManager();
+        final Intent intent = new Intent(action, uri);
+        List<ResolveInfo> list =
+                packageManager.queryIntentActivities(intent,
+                        PackageManager.MATCH_DEFAULT_ONLY);
+        return list.size() > 0;
+    }
+    
+    /**
+     * Indicates whether the specified action can be used as an intent. This
+     * method queries the package manager for installed packages that can
+     * respond to an intent with the specified action. If no suitable package is
+     * found, this method returns false.
+     *
+     * @param context The application's environment.
+     * @param action The Intent action to check for availability.
+     *
+     * @return True if an Intent with the specified action can be sent and
+     *         responded to, false otherwise.
+     */
+    public static boolean isIntentAvailable(Context context, String action) {
+        final PackageManager packageManager = context.getPackageManager();
+        final Intent intent = new Intent(action);
+        List<ResolveInfo> list =
+                packageManager.queryIntentActivities(intent,
+                        PackageManager.MATCH_DEFAULT_ONLY);
+        return list.size() > 0;
+    }
+    
+    
+
+    /**
+     * An AsyncTaskCompleteListener to handle the completion of an OCRTask.
+     *
+     */
+	public class OCRTaskCompleteListener implements AsyncTaskCompleteListener<String> {
+
+		/**
+		 * 
+		 * 
+		 * @see com.flugtag.task.AsyncTaskCompleteListener#onTaskComplete(java.lang.Object)
+		 */
+		@Override
+		public void onTaskComplete(String result) {
+			//TODO: launch an actual activity
+			Context ctx = MainActivity.this;
+			AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+			builder
+				.setTitle("OCR Text")
+				.setMessage(result)
+				.setPositiveButton("Ok", null)
+				.show();
+		}
+
+	}
 }
