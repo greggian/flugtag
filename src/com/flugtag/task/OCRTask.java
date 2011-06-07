@@ -108,10 +108,9 @@ public class OCRTask extends AsyncTask<Uri, Void, String> {
 		Uri data = params[0];
 		dbgUri = new Uri.Builder().path("/sdcard/").appendPath("flug"+data.getLastPathSegment()).build();
         Pix pix = getPixFromUri(data);
-        preprocess(pix);
+        pix = preprocess(pix);
         
 		Pixa pixa = slice(pix);
-		pix.recycle();
 		
 		TessBaseAPI tessApi = new TessBaseAPI();
 		tessApi.init(Paths.OCR_DATA, "eng");
@@ -153,14 +152,16 @@ public class OCRTask extends AsyncTask<Uri, Void, String> {
         htd.setParameters(hydrogenParams);
 
 		htd.setSourceImage(pix);
+		pix.recycle();
 		htd.detectText();
         Pixa unsorted = htd.getTextAreas();
         Pixa pixa = unsorted.sort(Constants.L_SORT_BY_Y, Constants.L_SORT_INCREASING);
         unsorted.recycle();
+        htd.clear();
         return pixa;
 	}
 	
-	private void preprocess(Pix pix){
+	private Pix preprocess(Pix pix){
 		// Shrink if necessary
 		pix = resizePix(pix);
 		pix = convertTo8(pix);
@@ -168,6 +169,7 @@ public class OCRTask extends AsyncTask<Uri, Void, String> {
 		//pix = binarize(pix);
 		//pix = enhance(pix);
 		//pix = threshold(pix);
+		return pix;
 	}
 	
 	private Pix threshold(Pix pix){
@@ -201,6 +203,7 @@ public class OCRTask extends AsyncTask<Uri, Void, String> {
 	private void dumpDebugImage(String name, Pix pix){
 		if(DEBUG && dbgUri != null && pix != null){
 			File file = new File(dbgUri.getPath() + name + ".bmp");
+			Log.i(TAG, "Writing debug image to: "+file.getPath());
 			WriteFile.writeImpliedFormat(pix, file);
 		}
 	}
