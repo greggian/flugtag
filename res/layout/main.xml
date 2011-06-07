@@ -18,6 +18,12 @@
 	<Button
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
+		android:text="@string/pick"
+		android:id="@+id/pickButton"
+		android:onClick="onPickBtnClick"/>
+	<Button
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
 		android:text="@string/list"
 		android:id="@+id/listButton"
 		android:onClick="onListBtnClick"/>

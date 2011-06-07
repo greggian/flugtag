@@ -24,7 +24,9 @@ import android.view.View;
 
 public class MainActivity extends Activity {
 	
-    private static final int IMAGE_CAPTURE = 0;
+	private static final int IMAGE_CAPTURE = 0;
+	private static final int IMAGE_PICK = 1;
+	
 	private Uri tmpFileUri;
 
 	/**
@@ -76,6 +78,30 @@ public class MainActivity extends Activity {
 		}
     }
     
+	/**
+	 * Handle button click event
+	 * 
+	 * @param btn The click target button
+	 * @category Button Event
+	 */
+    public void onPickBtnClick(View btn){
+        //check that there is an activity for the image capture intent
+        if(!isIntentAvailable(this, Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)){
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder
+				.setTitle("No image media activity!")
+				.setMessage("There is no application available to pick a picture.")
+				.setPositiveButton("Ok", null)
+				.show();
+			
+			finish();
+			return;
+        }
+        
+		Intent captureIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+		startActivityForResult(captureIntent, IMAGE_PICK);
+    }
+    
     
 	/**
 	 * Handle button click event
@@ -100,8 +126,11 @@ public class MainActivity extends Activity {
 		startActivity(intent);
     }
     
-	/* (non-Javadoc)
+	/**
+	 * Handle result from startActivityForResult.
+	 * 
 	 * @see android.app.Activity#onActivityResult(int, int, android.content.Intent)
+	 * @see android.app.Activity#startActivityForResult(Intent, int)
 	 */
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -111,6 +140,12 @@ public class MainActivity extends Activity {
 			
 			//perform the OCR and call back on complete 
 			new OCRTask(this, new OCRTaskCompleteListener()).execute(tmpFileUri);
+			
+		}else if(resultCode == Activity.RESULT_OK && requestCode == IMAGE_PICK){
+			Uri selectedImage = data.getData();
+			
+			//perform the OCR and call back on complete 
+			new OCRTask(this, new OCRTaskCompleteListener()).execute(selectedImage);
 		}
 	}
     
@@ -157,15 +192,13 @@ public class MainActivity extends Activity {
     }
     
     
-
     /**
      * An AsyncTaskCompleteListener to handle the completion of an OCRTask.
-     *
      */
 	public class OCRTaskCompleteListener implements AsyncTaskCompleteListener<String> {
 
 		/**
-		 * 
+		 * Handle completion of OCRTask. 
 		 * 
 		 * @see com.flugtag.task.AsyncTaskCompleteListener#onTaskComplete(java.lang.Object)
 		 */
